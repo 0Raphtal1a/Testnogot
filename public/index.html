@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+  <title>Маникюр</title>
+  <meta name="description" content="Примерка маникюра с Pinterest на фото руки" />
+  <meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Маникюр" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" href="/icons/icon-192.png" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <!-- SF Symbols-подобные иконки -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-sparkles" viewBox="0 0 24 24"><path fill="currentColor" d="M10 2.5c.3 0 .5.2.6.5l1 3.6a5 5 0 0 0 3.3 3.3l3.6 1c.3.1.5.3.5.6s-.2.5-.5.6l-3.6 1a5 5 0 0 0-3.3 3.3l-1 3.6c-.1.3-.3.5-.6.5s-.5-.2-.6-.5l-1-3.6a5 5 0 0 0-3.3-3.3l-3.6-1c-.3-.1-.5-.3-.5-.6s.2-.5.5-.6l3.6-1a5 5 0 0 0 3.3-3.3l1-3.6c.1-.3.3-.5.6-.5Zm8.5-1c.2 0 .3.1.4.3l.4 1.3c.2.7.7 1.2 1.4 1.4l1.3.4c.2.1.3.2.3.4s-.1.3-.3.4l-1.3.4c-.7.2-1.2.7-1.4 1.4l-.4 1.3c-.1.2-.2.3-.4.3s-.3-.1-.4-.3l-.4-1.3c-.2-.7-.7-1.2-1.4-1.4l-1.3-.4c-.2-.1-.3-.2-.3-.4s.1-.3.3-.4l1.3-.4c.7-.2 1.2-.7 1.4-1.4l.4-1.3c.1-.2.2-.3.4-.3Z"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path fill="currentColor" d="M12 21.2c-.3 0-.6-.1-.8-.3C5.3 16.3 2 13 2 8.8 2 5.8 4.3 3.5 7.2 3.5c1.9 0 3.6 1 4.8 2.6 1.2-1.6 2.9-2.6 4.8-2.6 2.9 0 5.2 2.3 5.2 5.3 0 4.2-3.3 7.5-9.2 12.1-.2.2-.5.3-.8.3Z"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M10.3 2h3.4l.5 2.6c.6.2 1.2.5 1.7.9l2.5-.9 1.7 2.9-2 1.7a7 7 0 0 1 0 1.8l2 1.7-1.7 3-2.5-1c-.5.4-1.1.7-1.7 1l-.5 2.6h-3.4l-.5-2.6c-.6-.3-1.2-.6-1.7-1l-2.5 1-1.7-3 2-1.7a7 7 0 0 1 0-1.8l-2-1.7 1.7-2.9 2.5.9c.5-.4 1.1-.7 1.7-.9L10.3 2Zm1.7 6.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8Z" transform="translate(0 1)"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M9 5 4.5 9.5 9 14M4.5 9.5H15a5 5 0 0 1 0 10h-3"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12M8 7l4-4 4 4M8 10H6.5A1.5 1.5 0 0 0 5 11.5v8A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-8a1.5 1.5 0 0 0-1.5-1.5H16"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 6.5h16M9.5 6.5V4.5h5v2M6.5 6.5l1 13a1.5 1.5 0 0 0 1.5 1.5h6a1.5 1.5 0 0 0 1.5-1.5l1-13M10 10.5v6.5M14 10.5v6.5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13Zm4.7-1.8L20 20"/></symbol>
+    <symbol id="i-board" viewBox="0 0 24 24"><path fill="currentColor" d="M5 3h5.5A1.5 1.5 0 0 1 12 4.5v6A1.5 1.5 0 0 1 10.5 12H5a1.5 1.5 0 0 1-1.5-1.5v-6A1.5 1.5 0 0 1 5 3Zm8.5 0H19a1.5 1.5 0 0 1 1.5 1.5v2A1.5 1.5 0 0 1 19 8h-5.5A1.5 1.5 0 0 1 12 6.5v-2A1.5 1.5 0 0 1 13.5 3ZM13.5 9.5H19a1.5 1.5 0 0 1 1.5 1.5v8.5A1.5 1.5 0 0 1 19 21h-5.5a1.5 1.5 0 0 1-1.5-1.5V11a1.5 1.5 0 0 1 1.5-1.5ZM5 13.5h5.5A1.5 1.5 0 0 1 12 15v4.5a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5V15A1.5 1.5 0 0 1 5 13.5Z"/></symbol>
+    <symbol id="i-photo" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-11Z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="m4.5 16 4.2-4.2a1.5 1.5 0 0 1 2.1 0L16 17m-2-2 1.7-1.7a1.5 1.5 0 0 1 2.1 0L20 15.5"/><circle cx="15" cy="9" r="1.6" fill="currentColor"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M7 17 17 7M9 7h8v8"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="m9 5 7 7-7 7"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2" fill="currentColor"/><path stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></symbol>
+    <symbol id="i-hand" viewBox="0 0 24 24"><path fill="currentColor" d="M9.5 2.5c.8 0 1.5.7 1.5 1.5v6.2h.5V3c0-.8.7-1.5 1.5-1.5s1.5.7 1.5 1.5v7.2h.5V4.5c0-.8.7-1.5 1.5-1.5S18 3.7 18 4.5v6.7h.4V8c0-.8.7-1.5 1.5-1.5s1.5.7 1.5 1.5v6.5c0 4.4-3.2 7.9-7.6 7.9-2.6 0-4.4-1-5.9-3.2L4 13.7c-.4-.7-.2-1.6.5-2s1.6-.3 2.1.4L8 14V4c0-.8.7-1.5 1.5-1.5Z"/></symbol>
+    <symbol id="i-square" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="5" fill="currentColor"/></symbol>
+  </svg>
+
+  <div id="app">
+    <!-- ===== Онбординг ===== -->
+    <section id="onboarding" class="screen onboarding" hidden>
+      <div class="ob-hero" aria-hidden="true">
+        <div class="swatch s1"></div>
+        <div class="swatch s2"></div>
+        <div class="swatch s3"></div>
+      </div>
+      <div class="ob-body">
+        <h1 class="ob-title">Примерь маникюр<br />до салона</h1>
+        <p class="ob-text">Загрузи фото своей руки — и листай идеи с Pinterest уже на своих ногтях.</p>
+        <ul class="ob-tips">
+          <li><span class="tip-ic pink"><svg><use href="#i-hand"/></svg></span>Ладонь вниз, ногти хорошо видно</li>
+          <li><span class="tip-ic orange"><svg><use href="#i-sun"/></svg></span>Ровный дневной свет без бликов</li>
+          <li><span class="tip-ic indigo"><svg><use href="#i-square"/></svg></span>Однотонный фон за рукой</li>
+        </ul>
+      </div>
+      <div class="ob-actions">
+        <button class="btn-primary" data-action="pick-hand">Загрузить фото руки</button>
+      </div>
+    </section>
+
+    <!-- ===== Подтверждение фото ===== -->
+    <section id="confirm" class="screen confirm" hidden>
+      <div class="confirm-photo"><img id="confirmImg" alt="Фото руки" /></div>
+      <div class="confirm-body">
+        <h2 class="confirm-title">Хорошее фото?</h2>
+        <p class="confirm-text">На нём будет рисоваться каждый маникюр. Фото остаётся только на этом телефоне и отправляется лишь для примерки.</p>
+      </div>
+      <div class="ob-actions two">
+        <button class="btn-secondary" data-action="pick-hand">Переснять</button>
+        <button class="btn-primary" data-action="confirm-hand">Начать</button>
+      </div>
+    </section>
+
+    <!-- ===== Основные вкладки ===== -->
+    <main id="tabs" hidden>
+      <!-- Примерка -->
+      <section id="tab-swipe" class="tab active">
+        <header class="nav-large">
+          <h1>Примерка</h1>
+          <span id="queueInfo" class="nav-sub"></span>
+        </header>
+        <div id="deck" class="deck"></div>
+        <div id="deckEmpty" class="empty" hidden>
+          <div class="empty-ic"><svg><use href="#i-sparkles"/></svg></div>
+          <h3 id="emptyTitle">Дизайны закончились</h3>
+          <p id="emptyText">Добавь ещё доску Pinterest или начни заново с уже просмотренными.</p>
+          <div class="empty-actions">
+            <button class="btn-tinted" data-action="add-source">Добавить доску</button>
+            <button class="btn-plain" data-action="reset-seen">Показать заново</button>
+          </div>
+        </div>
+        <div id="deckLoading" class="empty" hidden>
+          <div class="spinner big"></div>
+          <p>Загружаю идеи с Pinterest…</p>
+        </div>
+        <div class="actions" id="deckActions">
+          <button class="act act-small" data-action="undo" aria-label="Вернуть"><svg><use href="#i-undo"/></svg></button>
+          <button class="act act-nope" data-action="nope" aria-label="Не нравится"><svg><use href="#i-x"/></svg></button>
+          <button class="act act-like" data-action="like" aria-label="Нравится"><svg><use href="#i-heart"/></svg></button>
+          <button class="act act-small" data-action="open-pin" aria-label="Открыть в Pinterest"><svg><use href="#i-arrow"/></svg></button>
+        </div>
+      </section>
+
+      <!-- Избранное -->
+      <section id="tab-favs" class="tab scroll">
+        <header class="nav-large">
+          <h1>Избранное</h1>
+          <span id="favCount" class="nav-sub"></span>
+        </header>
+        <div id="favGrid" class="fav-grid"></div>
+        <div id="favEmpty" class="empty inline" hidden>
+          <div class="empty-ic"><svg><use href="#i-heart"/></svg></div>
+          <h3>Пока пусто</h3>
+          <p>Свайпни вправо маникюр, который понравился, — он появится здесь.</p>
+          <button class="btn-tinted" data-action="go-swipe">К примерке</button>
+        </div>
+      </section>
+
+      <!-- Настройки -->
+      <section id="tab-settings" class="tab scroll">
+        <header class="nav-large"><h1>Настройки</h1></header>
+
+        <div class="group-title">Фото руки</div>
+        <div class="group">
+          <button class="row" data-action="pick-hand">
+            <img id="handThumb" class="row-thumb" alt="" />
+            <span class="row-main"><span class="row-label">Сменить фото</span><span class="row-sub">Примерки пересоздадутся на новом фото</span></span>
+            <svg class="row-chev"><use href="#i-chev"/></svg>
+          </button>
+        </div>
+
+        <div class="group-title">Откуда брать дизайны</div>
+        <div class="group" id="sourcesList"></div>
+        <div class="group-foot">Вставь ссылку на доску Pinterest или поисковую фразу. Новые дизайны появятся в примерке.</div>
+
+        <div class="group-title">Просмотренное</div>
+        <div class="group">
+          <button class="row" data-action="reset-seen">
+            <span class="row-main"><span class="row-label accent">Показать пропущенные заново</span></span>
+          </button>
+          <button class="row" data-action="clear-cache">
+            <span class="row-main"><span class="row-label destructive">Очистить готовые примерки</span><span class="row-sub" id="cacheInfo"></span></span>
+          </button>
+        </div>
+        <div class="group-foot">Избранное хранится только на этом iPhone. Чтобы его не потерять, добавь приложение на экран «Домой»: Поделиться → На экран «Домой».</div>
+      </section>
+
+      <nav class="tabbar" role="tablist">
+        <button class="tabbtn active" data-tab="swipe" role="tab"><svg><use href="#i-sparkles"/></svg><span>Примерка</span></button>
+        <button class="tabbtn" data-tab="favs" role="tab"><svg><use href="#i-heart"/></svg><span>Избранное</span><i class="badge" id="favBadge" hidden></i></button>
+        <button class="tabbtn" data-tab="settings" role="tab"><svg><use href="#i-gear"/></svg><span>Настройки</span></button>
+      </nav>
+    </main>
+
+    <!-- ===== Просмотр избранного ===== -->
+    <div id="viewer" class="viewer" hidden>
+      <div class="viewer-top">
+        <button class="pill-btn" data-action="close-viewer">Готово</button>
+        <div class="segmented" id="viewerSeg">
+          <button class="seg active" data-seg="tryon">На руке</button>
+          <button class="seg" data-seg="pin">Оригинал</button>
+        </div>
+        <span class="viewer-spacer"></span>
+      </div>
+      <div class="viewer-img"><img id="viewerImg" alt="" /></div>
+      <div class="viewer-bar">
+        <button class="vbtn" data-action="share-fav"><svg><use href="#i-share"/></svg><span>Поделиться</span></button>
+        <button class="vbtn" data-action="open-fav-pin"><svg><use href="#i-arrow"/></svg><span>Pinterest</span></button>
+        <button class="vbtn danger" data-action="delete-fav"><svg><use href="#i-trash"/></svg><span>Удалить</span></button>
+      </div>
+    </div>
+
+    <!-- ===== Шит: добавить источник ===== -->
+    <div id="sheetBackdrop" class="sheet-backdrop" hidden></div>
+    <div id="sheet" class="sheet" hidden>
+      <div class="grabber"></div>
+      <div class="sheet-head">
+        <button class="sheet-cancel" data-action="close-sheet">Отменить</button>
+        <h3>Новый источник</h3>
+        <button class="sheet-done" data-action="save-source" id="sheetSave">Добавить</button>
+      </div>
+      <div class="segmented wide" id="sourceSeg">
+        <button class="seg active" data-seg="board">Доска</button>
+        <button class="seg" data-seg="search">Поиск</button>
+      </div>
+      <div class="field">
+        <svg id="fieldIcon"><use href="#i-board"/></svg>
+        <input id="sourceInput" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://pin.it/… или pinterest.com/…" />
+      </div>
+      <p class="sheet-hint" id="sheetHint">В Pinterest открой доску → «Поделиться» → «Копировать ссылку».</p>
+      <div class="chips" id="searchChips" hidden>
+        <button class="chip">нюдовый маникюр</button>
+        <button class="chip">френч</button>
+        <button class="chip">хром ногти</button>
+        <button class="chip">миндаль короткие</button>
+        <button class="chip">осенний маникюр</button>
+        <button class="chip">nail art</button>
+      </div>
+    </div>
+
+    <!-- ===== Алерт с кодом доступа ===== -->
+    <div id="alert" class="alert-backdrop" hidden>
+      <div class="alert">
+        <h3>Код доступа</h3>
+        <p>Введи код, который задан в настройках приложения на Vercel.</p>
+        <input id="codeInput" type="password" autocomplete="off" />
+        <div class="alert-btns">
+          <button data-action="code-cancel">Отменить</button>
+          <button class="bold" data-action="code-ok">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast" hidden></div>
+    <input id="handFile" type="file" accept="image/*" hidden />
+  </div>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

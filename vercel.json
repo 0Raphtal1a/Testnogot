@@ -1,0 +1,10 @@
+{
+  "outputDirectory": "public",
+  "functions": {
+    "api/tryon.js": { "maxDuration": 60 },
+    "api/pins.js": { "maxDuration": 20 }
+  },
+  "headers": [
+    { "source": "/(.*)", "headers": [{ "key": "X-Content-Type-Options", "value": "nosniff" }] }
+  ]
+}
