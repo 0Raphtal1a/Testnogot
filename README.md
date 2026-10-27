@@ -8,7 +8,20 @@
 2. **Аккаунт Vercel** — vercel.com (бесплатный план).
 3. **Node.js** на компьютере — nodejs.org (LTS).
 
-## Деплой (Windows)
+## Установка на свой VPS (Ubuntu 22/24)
+
+Зайди на сервер по SSH под root и выполни одну команду:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/0Raphtal1a/testnogot/main/deploy/install.sh | bash
+```
+
+Скрипт поставит Node.js и Caddy, скачает код, спросит ключ ИИ и код доступа, включит автозапуск и HTTPS
+на бесплатном адресе вида `https://5-181-183-74.sslip.io`. Повторный запуск той же команды — обновление.
+
+Полезное: `systemctl status nails` (статус), `journalctl -u nails -f` (логи), ключ лежит в `/opt/nails/.env`.
+
+## Деплой на Vercel (Windows)
 
 ```powershell
 cd путь\к\nails-app
