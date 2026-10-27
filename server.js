@@ -7,15 +7,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import pins from './api/pins.js';
-import tryon from './api/tryon.js';
-import direct from './api/direct.js';
 import img from './api/img.js';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), 'public');
 const PORT = Number(process.env.PORT) || 3000;
-const MAX_BODY = 15 * 1024 * 1024;
+const MAX_BODY = 1024 * 1024;
 
-const ROUTES = { '/api/pins': pins, '/api/tryon': tryon, '/api/direct': direct, '/api/img': img };
+const ROUTES = { '/api/pins': pins, '/api/img': img };
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',

@@ -1,11 +1,11 @@
 // ============================================================
-//  Маникюр — примерка дизайнов с Pinterest на фото руки
+//  Маникюр — идеи с Pinterest со свайпами и избранным
 // ============================================================
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
-// ---------- IndexedDB: фото руки, готовые примерки, избранное ----------
+// ---------- IndexedDB: избранное ----------
 const db = (() => {
   let dbp;
   const open = () =>
@@ -53,15 +53,11 @@ const DEFAULT_SOURCES = [
 ];
 
 const state = {
-  hand: null,
-  handId: null,
-  pendingHand: null,
   sources: ls.get('sources', DEFAULT_SOURCES),
   seen: new Set(ls.get('seen', [])),
   queue: [],
   history: [],
   favs: [],
-  gen: new Map(), // pinId -> { status, image, error, promise }
   pinCache: new Map(), // sourceId -> pins
   newFavs: 0,
 };
@@ -92,21 +88,10 @@ function shuffle(a) {
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 const ERRORS = {
-  no_credits: 'Закончился баланс у провайдера ИИ',
-  no_api_key: 'На сервере не задан ключ IMAGE_API_KEY',
-  no_image: 'ИИ не смог нарисовать этот дизайн',
-  design_fetch_failed: 'Не удалось скачать картинку с Pinterest',
   no_pins: 'Pinterest не отдал ни одного пина',
   not_pinterest: 'Это не ссылка на Pinterest',
   bad_link: 'Не получилось разобрать ссылку',
   network: 'Нет связи с сервером',
-  provider_unreachable: 'Сервис ИИ не пускает этот сервер (таймаут соединения)',
-  direct_blocked: 'ИИ не отвечает и с телефона (сеть или запрет запросов из браузера)',
-  direct_needs_access_code: 'Задай ACCESS_CODE в Vercel — без него прямой режим выключен',
-  http_504: 'ИИ отвечал слишком долго (таймаут Vercel)',
-  http_413: 'Фото руки слишком большое',
-  http_500: 'Ошибка сервера',
-  edits_not_supported: 'API не умеет редактировать фото (нет /images/edits)',
   need_code: 'Нужен код доступа',
 };
 // неизвестную ошибку показываем как есть — так сразу видно причину
@@ -151,56 +136,9 @@ async function api(path, opts = {}, retried = false) {
   return j;
 }
 
-// ---------- Фото руки ----------
-async function fileToDataUrl(file, max = 1024) {
-  const url = URL.createObjectURL(file);
-  try {
-    const img = new Image();
-    img.src = url;
-    await img.decode();
-    const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
-    const c = document.createElement('canvas');
-    c.width = Math.round(img.naturalWidth * k);
-    c.height = Math.round(img.naturalHeight * k);
-    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-    return c.toDataURL('image/jpeg', 0.86);
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-}
-
-$('#handFile').addEventListener('change', async (e) => {
-  const f = e.target.files?.[0];
-  e.target.value = '';
-  if (!f) return;
-  try {
-    state.pendingHand = await fileToDataUrl(f);
-    $('#confirmImg').src = state.pendingHand;
-    show('confirm');
-  } catch {
-    toast('Не получилось открыть фото');
-  }
-});
-
-async function confirmHand() {
-  const first = !state.hand;
-  state.hand = state.pendingHand;
-  state.handId = uid();
-  state.pendingHand = null;
-  await db.put('kv', state.hand, 'hand');
-  await db.put('kv', state.handId, 'handId');
-  state.gen.clear();
-  show('tabs');
-  renderSettings();
-  renderFavs();
-  if (first) loadFeed();
-  else { renderDeck(); toast('Фото обновлено'); }
-}
-
 // ---------- Экраны ----------
 function show(name) {
   $('#onboarding').hidden = name !== 'onboarding';
-  $('#confirm').hidden = name !== 'confirm';
   $('#tabs').hidden = name !== 'tabs';
 }
 function switchTab(tab) {
@@ -260,162 +198,20 @@ function appendPins(pins) {
   renderDeck();
 }
 
-// ---------- Генерация примерки ----------
-// Обычно ИИ вызывает сервер. Если провайдер не пускает зарубежные серверы (provider_unreachable),
-// телефон обращается к нему сам — из России он доступен. Режим запоминается до перезапуска.
-let directMode = false;
-async function tryOn(pin) {
-  if (!directMode) {
-    try {
-      return (await api('/api/tryon', { method: 'POST', body: JSON.stringify({ hand: state.hand, design: pin.image, aspect: await handAspect() }) })).image;
-    } catch (e) {
-      if (e.message !== 'provider_unreachable') throw e;
-      directMode = true;
-    }
-  }
-  return directTryOn(pin);
-}
-
-let directCfg = null;
-async function directTryOn(pin) {
-  directCfg ||= await api('/api/direct');
-  const { base, model, key, prompt } = directCfg;
-  const aspect = await handAspect();
-  const size = aspect < 0.85 ? '1024x1536' : aspect > 1.18 ? '1536x1024' : '1024x1024';
-  const handBlob = await (await fetch(state.hand)).blob();
-  const dr = await fetch(`/api/img?url=${encodeURIComponent(pin.image)}`, { headers: { 'x-access-code': ls.get('code', '') } });
-  if (!dr.ok) throw new Error('design_fetch_failed');
-  const designBlob = await dr.blob();
-
-  const send = async (withJpeg) => {
-    const form = new FormData();
-    form.append('model', model);
-    form.append('prompt', prompt);
-    form.append('size', size);
-    form.append('n', '1');
-    if (withJpeg) { form.append('output_format', 'jpeg'); form.append('output_compression', '85'); }
-    form.append('image[]', handBlob, 'hand.jpg');
-    form.append('image[]', designBlob, 'design.jpg');
-    let r;
-    try {
-      r = await fetch(`${base}/images/edits`, { method: 'POST', headers: { Authorization: `Bearer ${key}` }, body: form });
-    } catch {
-      // сюда попадаем и при отсутствии сети, и если провайдер запрещает запросы из браузера (CORS)
-      throw new Error('direct_blocked');
-    }
-    const text = await r.text();
-    let j; try { j = JSON.parse(text); } catch { j = { error: { message: `HTTP ${r.status}` } }; }
-    return { r, j };
-  };
-
-  let { r, j } = await send(true);
-  if (r.status === 400 && /output_(format|compression)/i.test(JSON.stringify(j))) ({ r, j } = await send(false));
-  if (!r.ok) {
-    const msg = j?.error?.message || `HTTP ${r.status}`;
-    if (r.status === 402 || /quota|balance|insufficient|баланс|лимит/i.test(msg)) throw new Error('no_credits');
-    if (r.status === 404) throw new Error('edits_not_supported');
-    throw new Error(msg);
-  }
-  const item = j?.data?.[0];
-  if (item?.b64_json) return `data:image/${/^\/9j\//.test(item.b64_json) ? 'jpeg' : 'png'};base64,${item.b64_json}`;
-  if (item?.url) return item.url;
-  throw new Error('no_image');
-}
-let aspectCache = null;
-async function handAspect() {
-  if (aspectCache?.src === state.hand) return aspectCache.value;
-  const img = new Image();
-  img.src = state.hand;
-  await img.decode().catch(() => {});
-  const value = img.naturalWidth && img.naturalHeight ? +(img.naturalWidth / img.naturalHeight).toFixed(3) : 0.75;
-  aspectCache = { src: state.hand, value };
-  return value;
-}
-function genKey(pin) { return `${state.handId}|${pin.id}`; }
-
-function ensureGen(pin) {
-  const cur = state.gen.get(pin.id);
-  if (cur && cur.status !== 'error') return cur.promise;
-  const g = { status: 'loading' };
-  g.promise = (async () => {
-    try {
-      const cached = await db.get('tryons', genKey(pin));
-      g.image = cached || (await tryOn(pin));
-      if (!cached) db.put('tryons', g.image, genKey(pin)).catch(() => {});
-      g.status = 'done';
-    } catch (e) {
-      g.status = 'error';
-      g.error = e.message;
-      if (e.message === 'no_credits' || e.message === 'no_api_key') toast(errText(e.message));
-    }
-    updateCard(pin);
-    onGenDone(pin, g);
-    return g;
-  })();
-  state.gen.set(pin.id, g);
-  return g.promise;
-}
-
-async function onGenDone(pin, g) {
-  if (g.status !== 'done') return;
-  const fav = state.favs.find((f) => f.id === pin.id);
-  if (fav && !fav.tryon) {
-    fav.tryon = g.image;
-    await db.put('favs', fav);
-    if ($('#tab-favs').classList.contains('active')) renderFavs();
-    if (viewerFav?.id === fav.id) setViewerSeg(viewerSeg);
-  }
-}
-
 // ---------- Колода ----------
 const cardEls = new Map();
 
 function cardHTML(pin) {
   return `
-    <img class="main" alt="" draggable="false" />
-    <div class="painting" hidden><img alt="" draggable="false" /></div>
-    <div class="status" hidden></div>
+    <img class="main" src="${esc(pin.image)}" alt="" draggable="false" referrerpolicy="no-referrer" />
     <div class="stamp like"><svg><use href="#i-heart"/></svg></div>
     <div class="stamp nope"><svg><use href="#i-x"/></svg></div>
     <div class="meta">
-      <div class="ref"><img src="${pin.image}" alt="" draggable="false" referrerpolicy="no-referrer" /></div>
       <div class="meta-text">
-        <div class="meta-cap">Нажми — покажу оригинал</div>
-        <div class="meta-title"></div>
+        <div class="meta-cap">Нажми — показать целиком</div>
+        <div class="meta-title">${esc(pin.title || 'Идея маникюра')}</div>
       </div>
     </div>`;
-}
-
-function updateCard(pin) {
-  const el = cardEls.get(pin.id);
-  if (!el) return;
-  const g = state.gen.get(pin.id);
-  const main = $('img.main', el), painting = $('.painting', el), status = $('.status', el);
-  const showPin = el.classList.contains('show-pin');
-  $('.meta-title', el).textContent = pin.title || 'Идея маникюра';
-  $('.meta-cap', el).textContent = showPin ? 'Нажми — вернуть примерку' : 'Нажми — покажу оригинал';
-
-  if (showPin) {
-    main.hidden = false; painting.hidden = true; main.referrerPolicy = 'no-referrer';
-    if (main.src !== pin.image) main.src = pin.image;
-    status.hidden = false; status.className = 'status'; status.textContent = 'Оригинал с Pinterest';
-    return;
-  }
-  if (g?.status === 'done') {
-    painting.hidden = true; main.hidden = false;
-    if (main.src !== g.image) main.src = g.image;
-    status.hidden = true;
-  } else if (g?.status === 'error') {
-    painting.hidden = true; main.hidden = false; main.referrerPolicy = 'no-referrer';
-    if (main.src !== pin.image) main.src = pin.image;
-    status.hidden = false; status.className = 'status error';
-    status.innerHTML = `${errText(g.error)} · <button data-retry>Повторить</button>`;
-  } else {
-    main.hidden = true; painting.hidden = false;
-    $('img', painting).src = state.hand;
-    status.hidden = false; status.className = 'status';
-    status.innerHTML = '<span class="spinner"></span>Примеряю… около минуты';
-  }
 }
 
 function renderDeck() {
@@ -436,11 +232,7 @@ function renderDeck() {
     el.dataset.depth = depth;
     el.style.zIndex = 10 - depth;
     if (!el.classList.contains('dragging')) { el.style.transform = ''; el.style.opacity = ''; }
-    updateCard(pin);
   });
-
-  // генерируем верхнюю и следующую — чтобы при свайпе всё уже было готово
-  visible.slice(0, 2).forEach(ensureGen);
 
   const empty = !state.queue.length && $('#deckLoading').hidden;
   $('#deckEmpty').hidden = !empty;
@@ -455,7 +247,7 @@ const deckEl = $('#deck');
 
 deckEl.addEventListener('pointerdown', (e) => {
   const el = e.target.closest('.card');
-  if (!el || el.dataset.depth !== '0' || e.target.closest('[data-retry]')) return;
+  if (!el || el.dataset.depth !== '0') return;
   drag = { el, x0: e.clientX, y0: e.clientY, t0: performance.now(), dx: 0, dy: 0, moved: false };
   el.setPointerCapture(e.pointerId);
   el.classList.add('dragging');
@@ -482,22 +274,15 @@ function endDrag() {
   if (Math.abs(dx) > 110 || (Math.abs(dx) > 40 && v > 0.6)) return decide(dx > 0 ? 1 : -1);
   el.style.transform = '';
   $$('.stamp', el).forEach((s) => { s.style.opacity = 0; s.style.transform = ''; });
-  if (!moved) toggleCompare(el);
+  if (!moved) toggleFit(el);
 }
 deckEl.addEventListener('pointerup', endDrag);
 deckEl.addEventListener('pointercancel', endDrag);
 
-deckEl.addEventListener('click', (e) => {
-  if (!e.target.closest('[data-retry]')) return;
-  const pin = state.queue[0];
-  if (pin) { state.gen.delete(pin.id); ensureGen(pin); updateCard(pin); }
-});
-
-function toggleCompare(el) {
-  const pin = state.queue[0];
-  if (!pin) return;
-  el.classList.toggle('show-pin');
-  updateCard(pin);
+// тап по карточке: фото целиком (без обрезки) ↔ на весь экран
+function toggleFit(el) {
+  const fit = el.classList.toggle('fit');
+  $('.meta-cap', el).textContent = fit ? 'Нажми — вернуть' : 'Нажми — показать целиком';
 }
 
 function decide(dir) {
@@ -545,11 +330,9 @@ async function undo() {
 
 // ---------- Избранное ----------
 async function addFav(pin) {
-  const g = state.gen.get(pin.id);
-  const fav = { id: pin.id, pin, tryon: g?.status === 'done' ? g.image : null, ts: Date.now() };
+  const fav = { id: pin.id, pin, ts: Date.now() };
   state.favs.unshift(fav);
   await db.put('favs', fav);
-  if (!fav.tryon) ensureGen(pin);
   state.newFavs++;
   renderBadge();
 }
@@ -576,8 +359,7 @@ function renderFavs() {
     .map(
       (f) => `
       <button class="fav" data-fav="${f.id}" aria-label="Открыть">
-        <img src="${f.tryon || f.pin.image}" alt="" referrerpolicy="no-referrer" loading="lazy" />
-        ${f.tryon ? `<span class="fav-ref"><img src="${f.pin.image}" alt="" referrerpolicy="no-referrer" loading="lazy" /></span>` : '<span class="fav-wait"><span class="spinner"></span></span>'}
+        <img src="${esc(f.pin.image)}" alt="" referrerpolicy="no-referrer" loading="lazy" />
       </button>`,
     )
     .join('');
@@ -590,34 +372,24 @@ $('#favGrid').addEventListener('click', (e) => {
 });
 
 // ---------- Просмотр ----------
-let viewerFav = null, viewerSeg = 'tryon';
+let viewerFav = null;
 function openViewer(fav) {
   viewerFav = fav;
-  $('#viewer').hidden = false;
-  setViewerSeg(fav.tryon ? 'tryon' : 'pin');
-  if (!fav.tryon) ensureGen(fav.pin);
-}
-function setViewerSeg(seg) {
-  viewerSeg = seg;
-  $$('#viewerSeg .seg').forEach((b) => b.classList.toggle('active', b.dataset.seg === seg));
   const img = $('#viewerImg');
   img.referrerPolicy = 'no-referrer';
-  img.src = seg === 'tryon' && viewerFav.tryon ? viewerFav.tryon : viewerFav.pin.image;
+  img.src = fav.pin.image;
+  $('#viewer').hidden = false;
 }
-$('#viewerSeg').addEventListener('click', (e) => {
-  const seg = e.target.closest('[data-seg]')?.dataset.seg;
-  if (!seg) return;
-  if (seg === 'tryon' && !viewerFav.tryon) return toast('Примерка ещё рисуется');
-  setViewerSeg(seg);
-});
 
+// делимся самой картинкой (через наш сервер — Pinterest не даёт браузеру читать картинки), иначе ссылкой
 async function shareFav() {
   const f = viewerFav;
   try {
-    if (viewerSeg === 'tryon' && f.tryon) {
-      const blob = await (await fetch(f.tryon)).blob();
-      const file = new File([blob], 'manicure.png', { type: blob.type || 'image/png' });
-      if (navigator.canShare?.({ files: [file] })) return await navigator.share({ files: [file], text: f.pin.link });
+    const r = await fetch(`/api/img?url=${encodeURIComponent(f.pin.image)}`, { headers: { 'x-access-code': ls.get('code', '') } });
+    if (r.ok) {
+      const blob = await r.blob();
+      const file = new File([blob], 'manicure.jpg', { type: blob.type || 'image/jpeg' });
+      if (navigator.canShare?.({ files: [file] })) return await navigator.share({ files: [file] });
     }
     if (navigator.share) return await navigator.share({ url: f.pin.link });
     await navigator.clipboard.writeText(f.pin.link);
@@ -642,8 +414,7 @@ function sourceLabel(s) {
   }
 }
 
-async function renderSettings() {
-  $('#handThumb').src = state.hand || '';
+function renderSettings() {
   $('#sourcesList').innerHTML =
     state.sources
       .map((s) => {
@@ -659,8 +430,6 @@ async function renderSettings() {
       <span class="row-ic add"><svg><use href="#i-plus"/></svg></span>
       <span class="row-main"><span class="row-label accent">Добавить доску или поиск</span></span>
     </button>`;
-  const n = await db.count('tryons').catch(() => 0);
-  $('#cacheInfo').textContent = n ? `${n} ${plural(n, 'готовая', 'готовые', 'готовых')} — повторно не оплачиваются` : 'Пока нет';
 }
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
@@ -738,8 +507,10 @@ document.addEventListener('click', async (e) => {
   if (tabBtn) return switchTab(tabBtn.dataset.tab);
   const act = e.target.closest('[data-action]')?.dataset.action;
   switch (act) {
-    case 'pick-hand': return $('#handFile').click();
-    case 'confirm-hand': return confirmHand();
+    case 'start':
+      ls.set('welcomed', true);
+      show('tabs');
+      return loadFeed();
     case 'like': return decide(1);
     case 'nope': return decide(-1);
     case 'undo': return undo();
@@ -759,10 +530,6 @@ document.addEventListener('click', async (e) => {
       state.seen.clear(); saveSeen(); state.history = [];
       switchTab('swipe');
       return loadFeed();
-    case 'clear-cache':
-      await db.clear('tryons'); state.gen.clear();
-      renderSettings(); renderDeck();
-      return toast('Готовые примерки удалены');
   }
 });
 
@@ -770,14 +537,12 @@ document.addEventListener('click', async (e) => {
 (async function init() {
   navigator.storage?.persist?.().catch(() => {});
   try {
-    state.hand = await db.get('kv', 'hand');
-    state.handId = await db.get('kv', 'handId');
     state.favs = ((await db.all('favs')) || []).sort((a, b) => b.ts - a.ts);
   } catch {
     /* приватный режим Safari — работаем без сохранения */
   }
-  if (!state.hand) return show('onboarding');
-  show('tabs');
   renderFavs();
+  if (!ls.get('welcomed', false)) return show('onboarding');
+  show('tabs');
   loadFeed();
 })();

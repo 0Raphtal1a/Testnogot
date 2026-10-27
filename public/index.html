@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
   <title>Маникюр</title>
-  <meta name="description" content="Примерка маникюра с Pinterest на фото руки" />
+  <meta name="description" content="Идеи маникюра с Pinterest: свайпы и избранное" />
   <meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -46,38 +46,25 @@
         <div class="swatch s3"></div>
       </div>
       <div class="ob-body">
-        <h1 class="ob-title">Примерь маникюр<br />до салона</h1>
-        <p class="ob-text">Загрузи фото своей руки — и листай идеи с Pinterest уже на своих ногтях.</p>
+        <h1 class="ob-title">Найди маникюр<br />мечты</h1>
+        <p class="ob-text">Свежие идеи с Pinterest — листай, как в Tinder, а понравившиеся сохраняй.</p>
         <ul class="ob-tips">
-          <li><span class="tip-ic pink"><svg><use href="#i-hand"/></svg></span>Ладонь вниз, ногти хорошо видно</li>
-          <li><span class="tip-ic orange"><svg><use href="#i-sun"/></svg></span>Ровный дневной свет без бликов</li>
-          <li><span class="tip-ic indigo"><svg><use href="#i-square"/></svg></span>Однотонный фон за рукой</li>
+          <li><span class="tip-ic pink"><svg><use href="#i-heart"/></svg></span>Вправо — нравится, сохранится в избранном</li>
+          <li><span class="tip-ic indigo"><svg><use href="#i-x"/></svg></span>Влево — не моё, больше не покажется</li>
+          <li><span class="tip-ic orange"><svg><use href="#i-board"/></svg></span>Свои доски Pinterest — в настройках</li>
         </ul>
       </div>
       <div class="ob-actions">
-        <button class="btn-primary" data-action="pick-hand">Загрузить фото руки</button>
-      </div>
-    </section>
-
-    <!-- ===== Подтверждение фото ===== -->
-    <section id="confirm" class="screen confirm" hidden>
-      <div class="confirm-photo"><img id="confirmImg" alt="Фото руки" /></div>
-      <div class="confirm-body">
-        <h2 class="confirm-title">Хорошее фото?</h2>
-        <p class="confirm-text">На нём будет рисоваться каждый маникюр. Фото остаётся только на этом телефоне и отправляется лишь для примерки.</p>
-      </div>
-      <div class="ob-actions two">
-        <button class="btn-secondary" data-action="pick-hand">Переснять</button>
-        <button class="btn-primary" data-action="confirm-hand">Начать</button>
+        <button class="btn-primary" data-action="start">Начать</button>
       </div>
     </section>
 
     <!-- ===== Основные вкладки ===== -->
     <main id="tabs" hidden>
-      <!-- Примерка -->
+      <!-- Лента идей -->
       <section id="tab-swipe" class="tab active">
         <header class="nav-large">
-          <h1>Примерка</h1>
+          <h1>Идеи</h1>
           <span id="queueInfo" class="nav-sub"></span>
         </header>
         <div id="deck" class="deck"></div>
@@ -113,7 +100,7 @@
           <div class="empty-ic"><svg><use href="#i-heart"/></svg></div>
           <h3>Пока пусто</h3>
           <p>Свайпни вправо маникюр, который понравился, — он появится здесь.</p>
-          <button class="btn-tinted" data-action="go-swipe">К примерке</button>
+          <button class="btn-tinted" data-action="go-swipe">К идеям</button>
         </div>
       </section>
 
@@ -121,33 +108,21 @@
       <section id="tab-settings" class="tab scroll">
         <header class="nav-large"><h1>Настройки</h1></header>
 
-        <div class="group-title">Фото руки</div>
-        <div class="group">
-          <button class="row" data-action="pick-hand">
-            <img id="handThumb" class="row-thumb" alt="" />
-            <span class="row-main"><span class="row-label">Сменить фото</span><span class="row-sub">Примерки пересоздадутся на новом фото</span></span>
-            <svg class="row-chev"><use href="#i-chev"/></svg>
-          </button>
-        </div>
-
         <div class="group-title">Откуда брать дизайны</div>
         <div class="group" id="sourcesList"></div>
-        <div class="group-foot">Вставь ссылку на доску Pinterest или поисковую фразу. Новые дизайны появятся в примерке.</div>
+        <div class="group-foot">Вставь ссылку на доску Pinterest или поисковую фразу. Новые дизайны появятся в ленте.</div>
 
         <div class="group-title">Просмотренное</div>
         <div class="group">
           <button class="row" data-action="reset-seen">
             <span class="row-main"><span class="row-label accent">Показать пропущенные заново</span></span>
           </button>
-          <button class="row" data-action="clear-cache">
-            <span class="row-main"><span class="row-label destructive">Очистить готовые примерки</span><span class="row-sub" id="cacheInfo"></span></span>
-          </button>
         </div>
         <div class="group-foot">Избранное хранится только на этом iPhone. Чтобы его не потерять, добавь приложение на экран «Домой»: Поделиться → На экран «Домой».</div>
       </section>
 
       <nav class="tabbar" role="tablist">
-        <button class="tabbtn active" data-tab="swipe" role="tab"><svg><use href="#i-sparkles"/></svg><span>Примерка</span></button>
+        <button class="tabbtn active" data-tab="swipe" role="tab"><svg><use href="#i-sparkles"/></svg><span>Идеи</span></button>
         <button class="tabbtn" data-tab="favs" role="tab"><svg><use href="#i-heart"/></svg><span>Избранное</span><i class="badge" id="favBadge" hidden></i></button>
         <button class="tabbtn" data-tab="settings" role="tab"><svg><use href="#i-gear"/></svg><span>Настройки</span></button>
       </nav>
@@ -157,10 +132,6 @@
     <div id="viewer" class="viewer" hidden>
       <div class="viewer-top">
         <button class="pill-btn" data-action="close-viewer">Готово</button>
-        <div class="segmented" id="viewerSeg">
-          <button class="seg active" data-seg="tryon">На руке</button>
-          <button class="seg" data-seg="pin">Оригинал</button>
-        </div>
         <span class="viewer-spacer"></span>
       </div>
       <div class="viewer-img"><img id="viewerImg" alt="" /></div>
@@ -203,7 +174,7 @@
     <div id="alert" class="alert-backdrop" hidden>
       <div class="alert">
         <h3>Код доступа</h3>
-        <p>Введи код, который задан в настройках приложения на Vercel.</p>
+        <p>Введи код доступа к приложению.</p>
         <input id="codeInput" type="password" autocomplete="off" />
         <div class="alert-btns">
           <button data-action="code-cancel">Отменить</button>
@@ -213,7 +184,6 @@
     </div>
 
     <div id="toast" class="toast" hidden></div>
-    <input id="handFile" type="file" accept="image/*" hidden />
   </div>
 
   <script type="module" src="/app.js"></script>

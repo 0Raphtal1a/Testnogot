@@ -129,7 +129,8 @@ button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; bo
 .card.dragging { transition: none; }
 .card[data-depth="1"] { transform: translateY(12px) scale(.95); }
 .card[data-depth="2"] { transform: translateY(24px) scale(.9); opacity: .7; }
-.card img.main { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+.card img.main { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; transition: transform .3s ease; }
+.card.fit img.main { object-fit: contain; background: #000; }
 
 /* Пока ИИ рисует — её рука с бликом, будто лак ложится */
 .card .painting { position: absolute; inset: 0; overflow: hidden; }
