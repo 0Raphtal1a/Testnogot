@@ -73,7 +73,7 @@ async function viaImagesApi(hand, design, aspect) {
   if (!r.ok) {
     const msg = j?.error?.message || `images_api_${r.status}`;
     if (r.status === 402 || /quota|balance|insufficient|баланс|лимит/i.test(msg)) throw new Error('no_credits');
-    if (r.status === 404) throw new Error('edits_not_supported');
+    if (r.status === 404) throw new Error(j?.error?.message ? `404: ${msg}` : 'edits_not_supported');
     throw new Error(msg);
   }
   const item = j?.data?.[0];
