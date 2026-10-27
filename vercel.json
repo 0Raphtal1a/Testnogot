@@ -1,7 +1,7 @@
 {
   "outputDirectory": "public",
   "functions": {
-    "api/tryon.js": { "maxDuration": 60 },
+    "api/tryon.js": { "maxDuration": 180 },
     "api/pins.js": { "maxDuration": 20 }
   },
   "headers": [

@@ -92,14 +92,15 @@ function shuffle(a) {
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 const ERRORS = {
-  no_credits: 'На балансе OpenRouter закончились деньги',
-  no_api_key: 'На Vercel не задан ключ OPENROUTER_API_KEY',
+  no_credits: 'Закончился баланс у провайдера ИИ',
+  no_api_key: 'На сервере не задан ключ IMAGE_API_KEY',
   no_image: 'ИИ не смог нарисовать этот дизайн',
   design_fetch_failed: 'Не удалось скачать картинку с Pinterest',
   no_pins: 'Pinterest не отдал ни одного пина',
   not_pinterest: 'Это не ссылка на Pinterest',
   bad_link: 'Не получилось разобрать ссылку',
   network: 'Нет связи с сервером',
+  edits_not_supported: 'API не умеет редактировать фото (нет /images/edits)',
   need_code: 'Нужен код доступа',
 };
 const errText = (e) => ERRORS[e] || 'Что-то пошло не так';
@@ -253,6 +254,16 @@ function appendPins(pins) {
 }
 
 // ---------- Генерация примерки ----------
+let aspectCache = null;
+async function handAspect() {
+  if (aspectCache?.src === state.hand) return aspectCache.value;
+  const img = new Image();
+  img.src = state.hand;
+  await img.decode().catch(() => {});
+  const value = img.naturalWidth && img.naturalHeight ? +(img.naturalWidth / img.naturalHeight).toFixed(3) : 0.75;
+  aspectCache = { src: state.hand, value };
+  return value;
+}
 function genKey(pin) { return `${state.handId}|${pin.id}`; }
 
 function ensureGen(pin) {
@@ -262,7 +273,7 @@ function ensureGen(pin) {
   g.promise = (async () => {
     try {
       const cached = await db.get('tryons', genKey(pin));
-      g.image = cached || (await api('/api/tryon', { method: 'POST', body: JSON.stringify({ hand: state.hand, design: pin.image }) })).image;
+      g.image = cached || (await api('/api/tryon', { method: 'POST', body: JSON.stringify({ hand: state.hand, design: pin.image, aspect: await handAspect() }) })).image;
       if (!cached) db.put('tryons', g.image, genKey(pin)).catch(() => {});
       g.status = 'done';
     } catch (e) {
@@ -336,7 +347,7 @@ function updateCard(pin) {
     main.hidden = true; painting.hidden = false;
     $('img', painting).src = state.hand;
     status.hidden = false; status.className = 'status';
-    status.innerHTML = '<span class="spinner"></span>Примеряю…';
+    status.innerHTML = '<span class="spinner"></span>Примеряю… около минуты';
   }
 }
 
