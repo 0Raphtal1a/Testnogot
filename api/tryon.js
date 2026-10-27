@@ -7,6 +7,16 @@
 
 import { checkAccess, UA } from './_lib.js';
 
+// fetch с понятной ошибкой: какой шаг и какой сетевой код (ENOTFOUND, ECONNRESET, таймаут…)
+async function step(label, url, opts) {
+  try {
+    return await fetch(url, opts);
+  } catch (e) {
+    const c = e.cause || {};
+    throw new Error(`${label}: ${c.code || c.name || e.name} ${c.message || e.message}`.slice(0, 180));
+  }
+}
+
 const PROMPT = `Realistic virtual manicure try-on.
 The FIRST image is a photo of a person's hand. The SECOND image is a manicure reference.
 Edit the FIRST image only: paint every visible fingernail of that hand with exactly the manicure from the second image — same colors, pattern, nail art details, finish (glossy/matte/chrome), nail shape and approximate length.
@@ -14,7 +24,7 @@ Keep everything else from the first image identical: the same hand, skin tone, f
 The result must look like a real unedited photo of this same hand right after a salon manicure.`;
 
 async function fetchDesign(url) {
-  const r = await fetch(url, { headers: { 'User-Agent': UA, Referer: 'https://www.pinterest.com/' } });
+  const r = await step('Pinterest-картинка', url, { headers: { 'User-Agent': UA, Referer: 'https://www.pinterest.com/' } });
   if (!r.ok) throw new Error('design_fetch_failed');
   const type = r.headers.get('content-type') || 'image/jpeg';
   return { type, buf: Buffer.from(await r.arrayBuffer()) };
@@ -47,12 +57,14 @@ async function viaImagesApi(hand, design, aspect) {
     }
     form.append('image[]', new Blob([hand.buf], { type: hand.type }), `hand.${ext(hand.type)}`);
     form.append('image[]', new Blob([design.buf], { type: design.type }), `design.${ext(design.type)}`);
-    const r = await fetch(`${base}/images/edits`, {
+    const r = await step(`ИИ (${new URL(base).host})`, `${base}/images/edits`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${process.env.IMAGE_API_KEY}` },
       body: form,
     });
-    const j = await r.json().catch(() => ({}));
+    const text = await r.text();
+    let j;
+    try { j = JSON.parse(text); } catch { j = { error: { message: `HTTP ${r.status}: ${text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120)}` } }; }
     return { r, j };
   };
 
