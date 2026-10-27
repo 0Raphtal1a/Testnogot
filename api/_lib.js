@@ -45,3 +45,10 @@ export function decodeEntities(s = '') {
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'");
 }
+
+// Промпт для ИИ-примерки (общий для сервера и прямого режима с телефона)
+export const PROMPT = `Realistic virtual manicure try-on.
+The FIRST image is a photo of a person's hand. The SECOND image is a manicure reference.
+Edit the FIRST image only: paint every visible fingernail of that hand with exactly the manicure from the second image — same colors, pattern, nail art details, finish (glossy/matte/chrome), nail shape and approximate length.
+Keep everything else from the first image identical: the same hand, skin tone, fingers, pose, rings, background, lighting and framing. Do not add or remove fingers, do not crop, do not include the reference image.
+The result must look like a real unedited photo of this same hand right after a salon manicure.`;

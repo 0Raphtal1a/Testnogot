@@ -5,7 +5,7 @@
 //  1) IMAGE_API_KEY задан → OpenAI-совместимый Images API (/images/edits), напр. moduleapi.pro + gpt-image-2.5
 //  2) иначе OPENROUTER_API_KEY → OpenRouter + Gemini Flash Image
 
-import { checkAccess, UA } from './_lib.js';
+import { checkAccess, UA, PROMPT } from './_lib.js';
 
 // fetch с понятной ошибкой: какой шаг и какой сетевой код (ENOTFOUND, ECONNRESET, таймаут…)
 async function step(label, url, opts) {
@@ -13,15 +13,13 @@ async function step(label, url, opts) {
     return await fetch(url, opts);
   } catch (e) {
     const c = e.cause || {};
+    // провайдер ИИ недоступен с этого сервера — телефон попробует обратиться к нему напрямую
+    if (label.startsWith('ИИ') && /CONNECT_TIMEOUT|ECONNREFUSED|ECONNRESET|ENOTFOUND|EHOSTUNREACH|ETIMEDOUT/.test(c.code || '')) throw new Error('provider_unreachable');
     throw new Error(`${label}: ${c.code || c.name || e.name} ${c.message || e.message}`.slice(0, 180));
   }
 }
 
-const PROMPT = `Realistic virtual manicure try-on.
-The FIRST image is a photo of a person's hand. The SECOND image is a manicure reference.
-Edit the FIRST image only: paint every visible fingernail of that hand with exactly the manicure from the second image — same colors, pattern, nail art details, finish (glossy/matte/chrome), nail shape and approximate length.
-Keep everything else from the first image identical: the same hand, skin tone, fingers, pose, rings, background, lighting and framing. Do not add or remove fingers, do not crop, do not include the reference image.
-The result must look like a real unedited photo of this same hand right after a salon manicure.`;
+
 
 async function fetchDesign(url) {
   const r = await step('Pinterest-картинка', url, { headers: { 'User-Agent': UA, Referer: 'https://www.pinterest.com/' } });
@@ -141,7 +139,7 @@ export default async function handler(req, res) {
       : await viaOpenRouter(hand, designImg);
     return res.status(200).json({ image });
   } catch (e) {
-    const known = ['no_credits', 'no_image', 'design_fetch_failed', 'edits_not_supported', 'bad_hand'];
+    const known = ['provider_unreachable', 'no_credits', 'no_image', 'design_fetch_failed', 'edits_not_supported', 'bad_hand'];
     return res.status(e.message === 'no_credits' ? 402 : 502).json({ error: known.includes(e.message) ? e.message : e.message.slice(0, 200) });
   }
 }
