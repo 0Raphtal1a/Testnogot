@@ -3,16 +3,6 @@
 export const UA =
   'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
 
-// Проверка кода доступа: если ACCESS_CODE задан в Vercel, без него API не работает
-export function checkAccess(req, res) {
-  const code = process.env.ACCESS_CODE;
-  if (!code) return true;
-  const got = req.headers['x-access-code'] || '';
-  if (got === code) return true;
-  res.status(401).json({ error: 'need_code' });
-  return false;
-}
-
 // Все картинки пинов приводим к размеру 736px (хорошее качество, небольшой вес)
 export function upsize(url) {
   return url.replace(/\/(?:\d+x\d*|originals)\//, '/736x/');

@@ -1,10 +1,9 @@
 // GET /api/img?url=https://i.pinimg.com/... — отдаёт картинку пина с нашего домена,
 // чтобы телефон мог положить её в запрос к ИИ (браузер не даёт читать чужие картинки напрямую).
 
-import { checkAccess, UA } from './_lib.js';
+import { UA } from './_lib.js';
 
 export default async function handler(req, res) {
-  if (!checkAccess(req, res)) return;
   let u;
   try {
     u = new URL(String(req.query.url || ''));

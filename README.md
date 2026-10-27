@@ -11,14 +11,14 @@
 curl -fsSL https://raw.githubusercontent.com/0Raphtal1a/testnogot/main/deploy/install.sh | bash
 ```
 
-Скрипт поставит Node.js и Caddy, скачает код, спросит код доступа (можно оставить пустым), включит автозапуск
+Скрипт поставит Node.js и Caddy, скачает код, включит автозапуск
 и HTTPS на бесплатном адресе вида `https://5-181-183-74.sslip.io`. Повторный запуск — обновление.
 
 Полезное: `systemctl status nails` (статус), `journalctl -u nails -f` (логи), настройки в `/opt/nails/.env`.
 
 ## Или на Vercel
 
-Импортируй репозиторий на vercel.com/new и нажми Deploy. Переменная `ACCESS_CODE` — по желанию.
+Импортируй репозиторий на vercel.com/new и нажми Deploy. Никаких ключей и переменных не нужно.
 
 ## На iPhone
 
@@ -27,11 +27,10 @@ curl -fsSL https://raw.githubusercontent.com/0Raphtal1a/testnogot/main/deploy/in
 ## Как устроено
 
 - `public/` — интерфейс (HTML/CSS/JS без сборки): свайпы, избранное в IndexedDB, настройки источников.
-- `api/pins.js` — пины с доски / профиля / поиска Pinterest (публичный виджет-API → RSS → HTML, по очереди).
+- `api/pins.js` — пины с поиска, досок и профилей Pinterest; поиск и доски отдаются постранично (`cursor`), лента подгружается бесконечно.
 - `api/img.js` — отдаёт картинку пина с нашего домена, чтобы ей можно было поделиться как файлом.
 - `server.js` — сервер для VPS; на Vercel те же функции работают как serverless.
 
 ## Если что-то не работает
 
 - **«Pinterest не ответил»** — Pinterest иногда режет серверы. Добавь в настройках ссылку на конкретную доску.
-- Если `ACCESS_CODE` задан, приложение один раз спросит его при первом запуске.

@@ -47,18 +47,30 @@ const ls = {
   set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
 };
 
-const DEFAULT_SOURCES = [
-  { id: 's1', type: 'search', value: 'маникюр идеи' },
-  { id: 's2', type: 'search', value: 'nail art design' },
+// Много разных запросов — лента получается длинной и разнообразной
+const DEFAULT_QUERIES = [
+  'маникюр идеи', 'маникюр 2026', 'нюдовый маникюр', 'френч маникюр', 'маникюр миндаль', 'короткий маникюр',
+  'осенний маникюр', 'зимний маникюр', 'маникюр с дизайном', 'хром маникюр', 'nail art design', 'aesthetic nails',
+  'almond nails', 'chrome nails',
 ];
+const DEFAULT_SOURCES = DEFAULT_QUERIES.map((value, i) => ({ id: `d${i}`, type: 'search', value }));
+
+// у тех, кто ставил первую версию, были только 2 запроса — заменяем на новый набор
+function loadSources() {
+  let list = ls.get('sources', null);
+  if (!list || (ls.get('sourcesV', 1) < 2 && list.every((x) => x.id === 's1' || x.id === 's2'))) list = DEFAULT_SOURCES;
+  ls.set('sourcesV', 2);
+  return list;
+}
 
 const state = {
-  sources: ls.get('sources', DEFAULT_SOURCES),
+  sources: loadSources(),
   seen: new Set(ls.get('seen', [])),
   queue: [],
   history: [],
   favs: [],
-  pinCache: new Map(), // sourceId -> pins
+  cursors: new Map(), // sourceId -> закладка следующей страницы (null — страниц больше нет)
+  loadingMore: false,
   newFavs: 0,
 };
 
@@ -92,44 +104,20 @@ const ERRORS = {
   not_pinterest: 'Это не ссылка на Pinterest',
   bad_link: 'Не получилось разобрать ссылку',
   network: 'Нет связи с сервером',
-  need_code: 'Нужен код доступа',
 };
 // неизвестную ошибку показываем как есть — так сразу видно причину
 const errText = (e) => ERRORS[e] || (e ? `Ошибка: ${String(e).slice(0, 120)}` : 'Что-то пошло не так');
 
-// ---------- API с кодом доступа ----------
-let codePromise = null;
-function askCode() {
-  if (codePromise) return codePromise;
-  codePromise = new Promise((resolve) => {
-    const a = $('#alert'), inp = $('#codeInput');
-    a.hidden = false; inp.value = ''; setTimeout(() => inp.focus(), 100);
-    const done = (v) => { a.hidden = true; codePromise = null; resolve(v); };
-    a.onclick = (e) => {
-      const act = e.target.closest('[data-action]')?.dataset.action;
-      if (act === 'code-ok') done(inp.value.trim() || null);
-      if (act === 'code-cancel') done(null);
-    };
-    inp.onkeydown = (e) => { if (e.key === 'Enter') done(inp.value.trim() || null); };
-  });
-  return codePromise;
-}
-
-async function api(path, opts = {}, retried = false) {
+// ---------- API ----------
+async function api(path, opts = {}) {
   let r;
   try {
     r = await fetch(path, {
       ...opts,
-      headers: { 'Content-Type': 'application/json', 'x-access-code': ls.get('code', ''), ...(opts.headers || {}) },
+      headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
     });
   } catch {
     throw new Error('network');
-  }
-  if (r.status === 401 && !retried) {
-    const code = await askCode();
-    if (!code) throw new Error('need_code');
-    ls.set('code', code);
-    return api(path, opts, true);
   }
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error || `http_${r.status}`);
@@ -149,12 +137,31 @@ function switchTab(tab) {
 }
 
 // ---------- Лента пинов ----------
-async function fetchSource(src) {
-  if (state.pinCache.has(src.id)) return state.pinCache.get(src.id);
-  const qs = src.type === 'search' ? `q=${encodeURIComponent(src.value)}` : `board=${encodeURIComponent(src.value)}`;
-  const { pins } = await api(`/api/pins?${qs}`);
-  state.pinCache.set(src.id, pins);
-  return pins;
+async function fetchSource(src, cursor) {
+  let qs = src.type === 'search' ? `q=${encodeURIComponent(src.value)}` : `board=${encodeURIComponent(src.value)}`;
+  if (cursor) qs += `&cursor=${encodeURIComponent(cursor)}`;
+  const r = await api(`/api/pins?${qs}`);
+  state.cursors.set(src.id, r.cursor || null);
+  return r.pins || [];
+}
+
+// Подгрузка следующих страниц, когда в колоде остаётся мало карточек
+async function loadMore() {
+  if (state.loadingMore) return;
+  const ready = shuffle(state.sources.filter((s) => state.cursors.get(s.id)));
+  if (!ready.length) return;
+  state.loadingMore = true;
+  try {
+    const batch = ready.slice(0, 4);
+    const results = await Promise.allSettled(batch.map((s) => fetchSource(s, state.cursors.get(s.id))));
+    batch.forEach((s, i) => results[i].status === 'rejected' && state.cursors.set(s.id, null));
+    const pins = interleave(results.filter((r) => r.status === 'fulfilled').map((r) => r.value));
+    const have = new Set(state.queue.map((p) => p.id));
+    state.queue.push(...pins.filter((p) => pinOk(p, have) && have.add(p.id)));
+  } finally {
+    state.loadingMore = false;
+  }
+  renderDeck();
 }
 
 // перемешиваем внутри источника и чередуем источники, чтобы лента была разнообразной
@@ -175,7 +182,8 @@ async function loadFeed() {
   $('#deckActions').style.visibility = 'hidden';
   $('#deck').innerHTML = '';
   cardEls.clear();
-  const results = await Promise.allSettled(state.sources.map(fetchSource));
+  state.cursors.clear();
+  const results = await Promise.allSettled(state.sources.map((src) => fetchSource(src)));
   const lists = results.filter((r) => r.status === 'fulfilled').map((r) => r.value);
   const have = new Set();
   state.queue = interleave(lists).filter((p) => pinOk(p, have) && have.add(p.id));
@@ -234,7 +242,8 @@ function renderDeck() {
     if (!el.classList.contains('dragging')) { el.style.transform = ''; el.style.opacity = ''; }
   });
 
-  const empty = !state.queue.length && $('#deckLoading').hidden;
+  if (state.queue.length < 15) loadMore();
+  const empty = !state.queue.length && $('#deckLoading').hidden && !state.loadingMore;
   $('#deckEmpty').hidden = !empty;
   $('#deckActions').style.visibility = state.queue.length ? 'visible' : 'hidden';
   $('[data-action="undo"]').disabled = !state.history.length;
@@ -385,7 +394,7 @@ function openViewer(fav) {
 async function shareFav() {
   const f = viewerFav;
   try {
-    const r = await fetch(`/api/img?url=${encodeURIComponent(f.pin.image)}`, { headers: { 'x-access-code': ls.get('code', '') } });
+    const r = await fetch(`/api/img?url=${encodeURIComponent(f.pin.image)}`);
     if (r.ok) {
       const blob = await r.blob();
       const file = new File([blob], 'manicure.jpg', { type: blob.type || 'image/jpeg' });
@@ -437,7 +446,7 @@ $('#sourcesList').addEventListener('click', (e) => {
   const id = e.target.closest('[data-del]')?.dataset.del;
   if (!id) return;
   state.sources = state.sources.filter((s) => s.id !== id);
-  state.pinCache.delete(id);
+  state.cursors.delete(id);
   saveSources();
   renderSettings();
   toast('Источник удалён');

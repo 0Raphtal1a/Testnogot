@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Установка «Маникюра» на чистый Ubuntu 22/24 одной командой:
 #   curl -fsSL https://raw.githubusercontent.com/0Raphtal1a/testnogot/main/deploy/install.sh | bash
-# Повторный запуск = обновление до последней версии из GitHub (код доступа сохраняется).
+# Повторный запуск = обновление до последней версии из GitHub .
 
 set -euo pipefail
 APP=/opt/nails
@@ -35,14 +35,10 @@ fi
 say "Код из GitHub"
 if [ -d "$APP/.git" ]; then git -C "$APP" pull -q; else git clone -q "$REPO" "$APP"; fi
 
-if [ ! -f "$APP/.env" ]; then
-  say "Настройки"
-  read -rp "Код доступа к приложению (Enter — без кода): " CODE </dev/tty
-  printf 'ACCESS_CODE=%s\nPORT=3000\n' "$CODE" > "$APP/.env"
-  chmod 600 "$APP/.env"
-fi
-# ИИ больше не используется — убираем старые ключи, если остались
-sed -i '/^IMAGE_/d;/^OPENROUTER_/d' "$APP/.env"
+# настройки сервера; старые ключи ИИ и код доступа больше не нужны
+[ -f "$APP/.env" ] || echo "PORT=3000" > "$APP/.env"
+sed -i '/^IMAGE_/d;/^OPENROUTER_/d;/^ACCESS_CODE/d' "$APP/.env"
+chmod 600 "$APP/.env"
 
 say "Автозапуск"
 cat > /etc/systemd/system/nails.service <<EOF
