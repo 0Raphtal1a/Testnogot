@@ -6,6 +6,9 @@
     },
     "api/pins.js": {
       "maxDuration": 20
+    },
+    "api/img.js": {
+      "maxDuration": 20
     }
   },
   "headers": [

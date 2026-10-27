@@ -101,6 +101,8 @@ const ERRORS = {
   bad_link: 'Не получилось разобрать ссылку',
   network: 'Нет связи с сервером',
   provider_unreachable: 'Сервис ИИ не пускает этот сервер (таймаут соединения)',
+  direct_blocked: 'ИИ не отвечает и с телефона (сеть или запрет запросов из браузера)',
+  direct_needs_access_code: 'Задай ACCESS_CODE в Vercel — без него прямой режим выключен',
   http_504: 'ИИ отвечал слишком долго (таймаут Vercel)',
   http_413: 'Фото руки слишком большое',
   http_500: 'Ошибка сервера',
@@ -259,6 +261,66 @@ function appendPins(pins) {
 }
 
 // ---------- Генерация примерки ----------
+// Обычно ИИ вызывает сервер. Если провайдер не пускает зарубежные серверы (provider_unreachable),
+// телефон обращается к нему сам — из России он доступен. Режим запоминается до перезапуска.
+let directMode = false;
+async function tryOn(pin) {
+  if (!directMode) {
+    try {
+      return (await api('/api/tryon', { method: 'POST', body: JSON.stringify({ hand: state.hand, design: pin.image, aspect: await handAspect() }) })).image;
+    } catch (e) {
+      if (e.message !== 'provider_unreachable') throw e;
+      directMode = true;
+    }
+  }
+  return directTryOn(pin);
+}
+
+let directCfg = null;
+async function directTryOn(pin) {
+  directCfg ||= await api('/api/direct');
+  const { base, model, key, prompt } = directCfg;
+  const aspect = await handAspect();
+  const size = aspect < 0.85 ? '1024x1536' : aspect > 1.18 ? '1536x1024' : '1024x1024';
+  const handBlob = await (await fetch(state.hand)).blob();
+  const dr = await fetch(`/api/img?url=${encodeURIComponent(pin.image)}`, { headers: { 'x-access-code': ls.get('code', '') } });
+  if (!dr.ok) throw new Error('design_fetch_failed');
+  const designBlob = await dr.blob();
+
+  const send = async (withJpeg) => {
+    const form = new FormData();
+    form.append('model', model);
+    form.append('prompt', prompt);
+    form.append('size', size);
+    form.append('n', '1');
+    if (withJpeg) { form.append('output_format', 'jpeg'); form.append('output_compression', '85'); }
+    form.append('image[]', handBlob, 'hand.jpg');
+    form.append('image[]', designBlob, 'design.jpg');
+    let r;
+    try {
+      r = await fetch(`${base}/images/edits`, { method: 'POST', headers: { Authorization: `Bearer ${key}` }, body: form });
+    } catch {
+      // сюда попадаем и при отсутствии сети, и если провайдер запрещает запросы из браузера (CORS)
+      throw new Error('direct_blocked');
+    }
+    const text = await r.text();
+    let j; try { j = JSON.parse(text); } catch { j = { error: { message: `HTTP ${r.status}` } }; }
+    return { r, j };
+  };
+
+  let { r, j } = await send(true);
+  if (r.status === 400 && /output_(format|compression)/i.test(JSON.stringify(j))) ({ r, j } = await send(false));
+  if (!r.ok) {
+    const msg = j?.error?.message || `HTTP ${r.status}`;
+    if (r.status === 402 || /quota|balance|insufficient|баланс|лимит/i.test(msg)) throw new Error('no_credits');
+    if (r.status === 404) throw new Error('edits_not_supported');
+    throw new Error(msg);
+  }
+  const item = j?.data?.[0];
+  if (item?.b64_json) return `data:image/${/^\/9j\//.test(item.b64_json) ? 'jpeg' : 'png'};base64,${item.b64_json}`;
+  if (item?.url) return item.url;
+  throw new Error('no_image');
+}
 let aspectCache = null;
 async function handAspect() {
   if (aspectCache?.src === state.hand) return aspectCache.value;
@@ -278,7 +340,7 @@ function ensureGen(pin) {
   g.promise = (async () => {
     try {
       const cached = await db.get('tryons', genKey(pin));
-      g.image = cached || (await api('/api/tryon', { method: 'POST', body: JSON.stringify({ hand: state.hand, design: pin.image, aspect: await handAspect() }) })).image;
+      g.image = cached || (await tryOn(pin));
       if (!cached) db.put('tryons', g.image, genKey(pin)).catch(() => {});
       g.status = 'done';
     } catch (e) {
